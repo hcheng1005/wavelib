@@ -24,13 +24,18 @@ int main() {
 	double *inp,*out,*diff;
 	int N, i,J;
 
+	struct timeval start, end;
+	long seconds, useconds;
+	double total_time;
+
+
 	FILE *ifp;
 	double temp[1200];
 
 	char *name = "db4";
 	obj = wave_init(name);// Initialize the wavelet
 
-	ifp = fopen("signal.txt", "r");
+	ifp = fopen("/home/zdhjs-05/myGitHubCode/mycode/wavelib/test/signal.txt", "r");
 	i = 0;
 	if (!ifp) {
 		printf("Cannot Open File");
@@ -59,7 +64,14 @@ int main() {
 	setDWTExtension(wt, "sym");// Options are "per" and "sym". Symmetric is the default option
 	setWTConv(wt, "direct");
 	
+	gettimeofday(&start, NULL);
 	dwt(wt, inp);// Perform DWT
+	gettimeofday(&end, NULL);
+
+	seconds  = end.tv_sec  - start.tv_sec;
+	useconds = end.tv_usec - start.tv_usec;
+	total_time = seconds + useconds/1E6;
+	printf("程序耗时: %f 秒\n", total_time);
 	//DWT output can be accessed using wt->output vector. Use wt_summary to find out how to extract appx and detail coefficients
 	
 	for (i = 0; i < wt->outlength; ++i) {

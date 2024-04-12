@@ -150,6 +150,23 @@ static void wave_function(int nk, double dt, int mother, double param,
   }
 }
 
+/**
+ * @description: 
+ * @param {double} *y
+ * @param {int} N
+ * @param {double} dt
+ * @param {int} mother
+ * @param {double} param
+ * @param {double} s0
+ * @param {double} dj
+ * @param {int} jtot
+ * @param {int} npad
+ * @param {double} *wave
+ * @param {double} *scale
+ * @param {double} *period
+ * @param {double} *coi
+ * @return {*}
+ */
 void cwavelet(const double *y, int N, double dt, int mother, double param,
               double s0, double dj, int jtot, int npad, double *wave,
               double *scale, double *period, double *coi) {
@@ -175,11 +192,15 @@ void cwavelet(const double *y, int N, double dt, int mother, double param,
   obj = fft_init(npad, 1);
   iobj = fft_init(npad, -1);
 
+  // FFT输入输出数组
   ypad = (fft_data *)malloc(sizeof(fft_data) * npad);
   yfft = (fft_data *)malloc(sizeof(fft_data) * npad);
+  // 子小波数组
   daughter = (fft_data *)malloc(sizeof(fft_data) * npad);
   kwave = (double *)malloc(sizeof(double) * npad);
 
+
+  // 以下是FFT标准流程：计算均值->去直流->执行FFT
   ymean = 0.0;
 
   for (i = 0; i < N; ++i) {
@@ -198,16 +219,13 @@ void cwavelet(const double *y, int N, double dt, int mother, double param,
   }
 
   // Find FFT of the input y (ypad)
-
   fft_exec(obj, ypad, yfft);
-
   for (i = 0; i < npad; ++i) {
     yfft[i].re /= (double)npad;
     yfft[i].im /= (double)npad;
   }
 
   // Construct the wavenumber array
-
   freq1 = 2.0 * pi / ((double)npad * dt);
   kwave[0] = 0.0;
 
@@ -221,10 +239,13 @@ void cwavelet(const double *y, int N, double dt, int mother, double param,
 
   // Main loop
 
+  // jtot是scale个数
   for (j = 1; j <= jtot; ++j) {
     scale1 = scale[j - 1]; // = s0*pow(2.0, (double)(j - 1)*dj);
-    wave_function(npad, dt, mother, param, scale1, kwave, pi, &period1, &coi1,
-                  daughter);
+
+    // 小波函数
+    wave_function(npad, dt, mother, param, scale1, kwave, pi, &period1, &coi1, daughter); 
+
     period[j - 1] = period1;
     for (k = 0; k < npad; ++k) {
       tmp1 = daughter[k].re * yfft[k].re - daughter[k].im * yfft[k].im;
@@ -232,6 +253,8 @@ void cwavelet(const double *y, int N, double dt, int mother, double param,
       daughter[k].re = tmp1;
       daughter[k].im = tmp2;
     }
+
+    // 执行FFT并记录结果
     fft_exec(iobj, daughter, ypad);
     iter = 2 * (j - 1) * N;
     for (i = 0; i < N; ++i) {

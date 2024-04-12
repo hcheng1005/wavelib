@@ -9,12 +9,12 @@ plt.figure()
 plt.subplot(1,2,1)
 plt.plot(data)
 
-cwt_result = np.loadtxt('/home/zdhjs-05/myGitHubCode/wavelib/build/cwt_result.dat')
-cwt_result = cwt_result[:,2].reshape([44, 504])
+cwt_result = np.loadtxt('/home/zdhjs-05/myGitHubCode/mycode/wavelib/build/cwt_result.dat')
+cwt_result = cwt_result[:,2].reshape([22, 504])
 # print(cwt_result.shape)
 
 t = np.linspace(0, 1, 504)
-freqs = np.arange(1, 45)
+freqs = np.arange(1, 23)
 
 plt.subplot(1,2,2)
 plt.contourf(t, freqs, abs(cwt_result), cmap='jet')

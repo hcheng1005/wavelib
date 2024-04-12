@@ -271,6 +271,15 @@ wpt_object wpt_init(wave_object wave, int siglength, int J) {
 	return obj;
 }
 
+/**
+ * @description: 连续小波变换对象初始化
+ * @param {char*} wave: 指定小波函数的名称（如 "morlet", "paul", "dog"）。
+ * @param {double} param: 特定小波函数的参数。
+ * @param {int} siglength: 输入信号的长度。
+ * @param {double} dt: 采样间隔。
+ * @param {int} J: 小波变换使用的总尺度数。
+ * @return {*}
+ */
 cwt_object cwt_init(const char* wave, double param,int siglength, double dt, int J) {
 	cwt_object obj = NULL;
 	int N, i,nj2,ibase2,mother;
@@ -287,11 +296,13 @@ cwt_object cwt_init(const char* wave, double param,int siglength, double dt, int
 
 	N = siglength;
 	nj2 = 2 * N * J;
+
+	// 构造cwt对象
 	obj = (cwt_object)malloc(sizeof(struct cwt_set) + sizeof(double)* (nj2 + 2 * J + N));
 
 	if (!strcmp(wave, "morlet") || !strcmp(wave, "morl")) {
 		s0 = 2 * dt;
-		dj = 0.4875;
+		dj = 0.4875; // why?
 		mother = 0;
 		if (param < 0.0) {
 			printf("\n Morlet Wavelet Parameter should be >= 0 \n");
@@ -334,21 +345,22 @@ cwt_object cwt_init(const char* wave, double param,int siglength, double dt, int
 	obj->pow = 2;
 	strcpy(obj->type, pdefault);
 
-	obj->s0 = s0;
-	obj->dj = dj;
-	obj->dt = dt;
-	obj->J = J;
-	obj->siglength = siglength;
-	obj->sflag = 0;
-	obj->pflag = 1;
-	obj->mother = mother;
-	obj->m = param;
+	obj->s0 = s0; 	// 	最小尺度
+	obj->dj = dj;	// 	尺度之间的间隔
+	obj->dt = dt;	// 	采样率，即数据采样的时间间隔
+	obj->J = J;		// 	小波变换使用的总尺度数
+	obj->siglength = siglength; 	// 	输入信号长度
+	obj->sflag = 0;			//
+	obj->pflag = 1;			//
+	obj->mother = mother;	// 	母小波
+	obj->m = param;			//	小波参数，用于调整小波函数的形状
 
 	t1 = 0.499999 + log((double)N) / log(2.0);
 	ibase2 = 1 + (int)t1;
 
 	obj->npad = (int)pow(2.0, (double)ibase2);
 
+	// 分配数据地址
 	obj->output = (cplx_data*) &obj->params[0];
 	obj->scale = &obj->params[nj2];
 	obj->period = &obj->params[nj2 + J];
@@ -1561,9 +1573,17 @@ void setCWTPadding(cwt_object wt, int pad) {
 	}
 }
 
+/**
+ * @description: 
+ * @param {cwt_object} wt
+ * @param {double} *inp
+ * @return {*}
+ */
 void cwt(cwt_object wt, const double *inp) {
 	int i, N, npad,nj2,j,j2;
 	N = wt->siglength;
+
+	// 尺度初始化（若之前步骤没有完成初始化的话，此处会默认使用‘power’模式进行scale初始化）
 	if (wt->sflag == 0) {
 		for (i = 0; i < wt->J; ++i) {
 			wt->scale[i] = wt->s0*pow(2.0, (double)(i)*wt->dj);
@@ -1582,13 +1602,14 @@ void cwt(cwt_object wt, const double *inp) {
 	j = wt->J;
 	j2 = 2 * j;
 
+	// 计算输入信号的均值
 	wt->smean = 0.0;
-
 	for (i = 0; i < N; ++i) {
 		wt->smean += inp[i];
 	}
 	wt->smean /= N;
 
+	// 执行小波变换
 	cwavelet(inp, N, wt->dt, wt->mother, wt->m, wt->s0,wt->dj,wt->J,npad,wt->params, wt->params+nj2, wt->params+nj2+j, wt->params+nj2+j2);
 
 }
